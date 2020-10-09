@@ -30,6 +30,8 @@ namespace WiFi_Basics
         I2cCharacterDisplay display;
         EndPoint localEP;
         EndPoint clientEP;
+        IPEndPoint ipLocalEP;
+        IPEndPoint ipClientEP;
 
         public MeadowApp()
         {
@@ -37,9 +39,13 @@ namespace WiFi_Basics
             {
                 Initialize();
 
-                ConnectToClient();
+                ConnectToClientTCP();
 
-                Communicate();
+                CommunicateTCP(); 
+                
+                //ConnectToClient();
+
+                //Communicate();
             }
             catch (Exception e)
             {
@@ -69,6 +75,30 @@ namespace WiFi_Basics
                     socket.SendTo(response, clientEP);
                 }
             });
+        }
+
+        private void CommunicateTCP()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ConnectToClientTCP()
+        {
+            ipLocalEP = new IPEndPoint(IPAddress.Parse("192.168.1.100"), 22222);
+            ipClientEP = new IPEndPoint(IPAddress.Parse("192.168.1.121"), 33333);
+            TcpListener listener = new TcpListener(ipLocalEP);
+            try
+            {
+                listener.Start();
+                Console.WriteLine("Connected!");
+                onboardLed.SetColor(Color.Blue);
+                display.Write("Ready!");
+            }
+            catch (Exception e)
+            {
+                display.Write(e.Message);
+                throw;
+            }
         }
 
         private void ConnectToClient()
