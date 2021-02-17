@@ -26,6 +26,7 @@ namespace WiFi_Basics
         RgbPwmLed onboardLed;
         UdpClient client;
         Socket socket;
+        Socket socket2;
         EndPoint localEP;
         EndPoint clientEP;
         IPEndPoint ipLocalEP;
@@ -39,13 +40,13 @@ namespace WiFi_Basics
             {
                 Initialize();
 
+                //AcceptCommunicationUDP();
+
+                //CommunicateUDP();
+
                 ConnectToClient();
 
                 Communicate();
-
-                //ConnectToClient();
-
-                //Communicate();
             }
             catch (Exception e)
             {
@@ -58,8 +59,8 @@ namespace WiFi_Basics
 
         private void Communicate()
         {
-            //Thread conThread = new Thread(() =>
-            //{
+            Thread conThread = new Thread(() =>
+            {
                 byte[] buffer = new byte[64];
                 while (true)
                 {
@@ -73,8 +74,28 @@ namespace WiFi_Basics
                     socket.Send(response);
                     onboardLed.SetColor(Color.Blue);
                 }
-            //});
-            //conThread.Start();
+            });
+            conThread.Start();
+        }
+
+        private void CommunicateUDP()
+        {
+            Thread conThread = new Thread(() =>
+            {
+                byte[] buffer;
+                while (true)
+                {
+                    buffer = client.Receive(ref ipClientEP);
+                    onboardLed.SetColor(Color.Green);
+                    Console.WriteLine(Encoding.ASCII.GetString(buffer));
+                    onboardLed.SetColor(Color.Red);
+
+                    byte[] response = Encoding.ASCII.GetBytes("Received!");
+                    client.Send(response, response.Length);
+                    onboardLed.SetColor(Color.Blue);
+                }
+            });
+            conThread.Start();
         }
 
         private void CommunicateTCP()
@@ -124,15 +145,64 @@ namespace WiFi_Basics
         private void ConnectToClient()
         {
             localEP = new IPEndPoint(IPAddress.Any, 22222);
-            clientEP = new IPEndPoint(IPAddress.Parse("192.168.1.173"), 33333);
+            ipClientEP = new IPEndPoint(IPAddress.Any, 33333);
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            bool connected = false;
+            byte[] buffer = new byte[64];
+            IPAddress address = null;
             try
             {
                 socket.Bind(localEP);
+                socket.Receive(buffer);
+                ipClientEP = (IPEndPoint)socket.RemoteEndPoint;
+                Console.WriteLine(ipClientEP.Address + ":" +ipClientEP.Port);
                 socket.Connect(clientEP);
                 Console.WriteLine("Connected!");
                 onboardLed.SetColor(Color.Blue);
                 Console.WriteLine("Ready!");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }
+        }
+
+        private void AcceptCommunication()
+        {
+            localEP = new IPEndPoint(IPAddress.Any, 22222);
+            Console.WriteLine(1);
+            socket2 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            try
+            {
+                Console.WriteLine(2);
+                socket2.Bind(localEP);
+                Console.WriteLine(3);
+                socket2.Listen(10);
+                Console.WriteLine(4);
+                socket = socket2.Accept();
+                Console.WriteLine(5);
+                Console.WriteLine("Connected!");
+                onboardLed.SetColor(Color.Blue);
+                Console.WriteLine("Ready!");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }
+        }
+
+        private void AcceptCommunicationUDP()
+        {
+            try
+            {
+                ipLocalEP = new IPEndPoint(IPAddress.Any, 22222);
+                ipClientEP = new IPEndPoint(IPAddress.Any, 33333);
+                client = new UdpClient(ipLocalEP);
+                client.Receive(ref ipClientEP);
+                Console.WriteLine(ipClientEP.Address + ":" + ipClientEP.Port);
+                client.Connect(ipClientEP);
             }
             catch (Exception e)
             {
@@ -175,12 +245,13 @@ namespace WiFi_Basics
         {
             Console.WriteLine("Getting list of access points.");
             Device.WiFiAdapter.Scan();
-            if (Device.WiFiAdapter.Networks.Count > 0)
+            var networks = Device.WiFiAdapter.Scan();
+            if (networks.Count > 0)
             {
                 Console.WriteLine("|-------------------------------------------------------------|---------|");
                 Console.WriteLine("|         Network Name             | RSSI |       BSSID       | Channel |");
                 Console.WriteLine("|-------------------------------------------------------------|---------|");
-                foreach (WifiNetwork accessPoint in Device.WiFiAdapter.Networks)
+                foreach (WifiNetwork accessPoint in networks)
                 {
                     Console.WriteLine($"| {accessPoint.Ssid,-32} | {accessPoint.SignalDbStrength,4} | {accessPoint.Bssid,17} |   {accessPoint.ChannelCenterFrequency,3}   |");
                 }
