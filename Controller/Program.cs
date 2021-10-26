@@ -15,7 +15,7 @@ namespace Controller
         static void Main(string[] args)
         {
             IPAddress address;
-            EndPoint clientEP = new IPEndPoint(IPAddress.Parse("192.168.1.121"), 22222);
+            EndPoint clientEP = new IPEndPoint(IPAddress.Parse("192.168.1.166"), 22222);
             EndPoint localEP = new IPEndPoint(IPAddress.Any, 33333);
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(localEP);

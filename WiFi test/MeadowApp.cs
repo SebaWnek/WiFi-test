@@ -12,8 +12,6 @@ using Meadow.Foundation.Leds;
 using Meadow.Foundation;
 using System.Net.Sockets;
 using System.Text;
-using Meadow.Foundation.Displays.Lcd;
-using System.Runtime.Remoting;
 
 namespace WiFi_Basics
 {
@@ -40,13 +38,13 @@ namespace WiFi_Basics
             {
                 Initialize();
 
-                //AcceptCommunicationUDP();
+                AcceptCommunicationUDP();
+
+                CommunicateUDP();
+
+                //ConnectToClient();
 
                 //CommunicateUDP();
-
-                ConnectToClient();
-
-                Communicate();
             }
             catch (Exception e)
             {
@@ -87,10 +85,11 @@ namespace WiFi_Basics
                 {
                     buffer = client.Receive(ref ipClientEP);
                     onboardLed.SetColor(Color.Green);
-                    Console.WriteLine(Encoding.ASCII.GetString(buffer));
+                    string msg = Encoding.ASCII.GetString(buffer);
+                    Console.WriteLine(msg);
                     onboardLed.SetColor(Color.Red);
 
-                    byte[] response = Encoding.ASCII.GetBytes("Received!");
+                    byte[] response = Encoding.ASCII.GetBytes("Received:" + msg);
                     client.Send(response, response.Length);
                     onboardLed.SetColor(Color.Blue);
                 }
@@ -198,7 +197,7 @@ namespace WiFi_Basics
             try
             {
                 ipLocalEP = new IPEndPoint(IPAddress.Any, 22222);
-                ipClientEP = new IPEndPoint(IPAddress.Any, 33333);
+                //ipClientEP = /new IPEndPoint(IPAddress.Any, 33333);
                 client = new UdpClient(ipLocalEP);
                 client.Receive(ref ipClientEP);
                 Console.WriteLine(ipClientEP.Address + ":" + ipClientEP.Port);
@@ -211,7 +210,7 @@ namespace WiFi_Basics
             }
         }
 
-        void Initialize()
+        async void Initialize()
         {
             Console.WriteLine("Initialize hardware...");
 
@@ -229,7 +228,7 @@ namespace WiFi_Basics
 
             Device.InitWiFiAdapter().Wait();
             ScanForAccessPoints();
-            ConnectionResult result = Device.WiFiAdapter.Connect("Meadow", "testtest");
+            ConnectionResult result = Device.WiFiAdapter.Connect("Meadow", "testtest").Result;
 
             if (result.ConnectionStatus != ConnectionStatus.Success)
             {
