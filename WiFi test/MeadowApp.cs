@@ -12,6 +12,7 @@ using Meadow.Foundation.Leds;
 using Meadow.Foundation;
 using System.Net.Sockets;
 using System.Text;
+using System.Net.NetworkInformation;
 
 namespace WiFi_Basics
 {
@@ -88,8 +89,14 @@ namespace WiFi_Basics
                     string msg = Encoding.ASCII.GetString(buffer);
                     Console.WriteLine(msg);
                     onboardLed.SetColor(Color.Red);
-
-                    byte[] response = Encoding.ASCII.GetBytes("Received:" + msg);
+                    string text;
+                    using (HttpClient client = new HttpClient())
+                    {
+                        HttpResponseMessage message = client.GetAsync("http://192.168.1.204:32400").Result;
+                        text = message.Content.ReadAsStringAsync().Result;
+                    }
+                    Console.WriteLine(text.Substring(0, 100));
+                    byte[] response = Encoding.ASCII.GetBytes("Received:" + msg + "\n\n" + text.Substring(0,100));
                     client.Send(response, response.Length);
                     onboardLed.SetColor(Color.Blue);
                 }
@@ -202,6 +209,8 @@ namespace WiFi_Basics
                 client.Receive(ref ipClientEP);
                 Console.WriteLine(ipClientEP.Address + ":" + ipClientEP.Port);
                 client.Connect(ipClientEP);
+                byte[] response = Encoding.ASCII.GetBytes("Connected!");
+                client.Send(response, response.Length);
             }
             catch (Exception e)
             {
